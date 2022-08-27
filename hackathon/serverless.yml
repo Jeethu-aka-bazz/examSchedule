@@ -1,0 +1,113 @@
+service: hackathon
+frameworkVersion: "3"
+
+custom:
+  tableName: "examhall-table-${sls:stage}"
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  profile: registration
+  region: ap-south-1
+  httpApi:
+    cors: true
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - Fn::GetAtt: [ExamHallTable, Arn]
+
+  environment:
+    EXAMHALL_TABLE: ${self:custom.tableName}
+
+functions:
+  getBranches:
+    handler: src/NewSchedule/index.getBranches
+    events:
+      - httpApi:
+          method: GET
+          path: /branches/{id}
+
+  getDepartment:
+    handler: src/NewSchedule/index.getDepartment
+    events:
+      - httpApi:
+          method: GET
+          path: /getDept/{dept}
+
+  getExamType:
+    handler: src/NewSchedule/index.getExamType
+    events:
+      - httpApi:
+          method: GET
+          path: /examType/{exmtype}
+
+  getSubjectsofEEE:
+    handler: src/NewSchedule/index.getSubjectsofEEE
+    events:
+      - httpApi:
+          method: GET
+          path: /eeeSubs/{eee}
+
+  getSubjectsofCSE:
+    handler: src/NewSchedule/index.getSubjectsofCSE
+    events:
+      - httpApi:
+          method: GET
+          path: /cseSubs/{cse}
+
+  getSubjectsofECE:
+    handler: src/NewSchedule/index.getSubjectsofECE
+    events:
+      - httpApi:
+          method: GET
+          path: /eceSubs/{ece}
+
+  getSubjectsofMECH:
+    handler: src/NewSchedule/index.getSubjectsofMECH
+    events:
+      - httpApi:
+          method: GET
+          path: /mechSubs/{mech}
+
+  postItems:
+    handler: src/NewSchedule/index.postItems
+    events:
+      - httpApi:
+          method: POST
+          path: /NewSchedule
+
+  # postDetails:
+  #   handler: src/Allocation/index.postDetails
+  #   events:
+  #     -httpApi:
+  #       method: POST
+  #       path: /Allocation
+
+resources:
+  Resources:
+    ExamHallTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableName}
